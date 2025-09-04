@@ -18,9 +18,7 @@ static double   dStartTime;
 static double   dStopTime;
 static double   dElapsedTime;
 
-#define crc64r crc64_iso_refl_by16_10
-
-extern "C" uint64_t crc64r(uint64_t, uint8_t *, size_t);
+extern "C" uint64_t crz64ra(uint64_t, uint8_t *, size_t);
 
 uint64_t crctbl[256];
 
@@ -45,7 +43,7 @@ uint64_t i;
     }
 }
 
-uint64_t crc64c(uint64_t crc64, uint8_t * bfr, size_t size)
+uint64_t crz64rc(uint64_t crc64, uint8_t * bfr, size_t size)
 {
 uint64_t crc = crc64;
     while(size--)
@@ -78,8 +76,8 @@ int main(int argc, char**argv)
     {
         size_t i;
         for (i = 1; i < 4095; i++) {
-            crcc = crc64c(0x0ull, bfr, i);
-            crcf = crc64r(0x0ull, bfr, i);
+            crcc = crz64rc(0x0ull, bfr, i);
+            crcf = crz64ra(0x0ull, bfr, i);
 //          crcc = crc64c(0x12345678abcdef0ull, bfr, i);
 //          crcf = crc64f(0x12345678abcdef0ull, bfr, i);
             if (crcc != crcf) {
@@ -97,7 +95,7 @@ int main(int argc, char**argv)
 
     Sleep(128);
     QueryPerformanceCounter(&liStartTime);
-    crcc = crc64c(0, bfr, SIZE);
+    crcc = crz64rc(0, bfr, SIZE);
     QueryPerformanceCounter(&liStopTime);
     dStartTime = (double)liStartTime.QuadPart;
     dStopTime = (double)liStopTime.QuadPart;
@@ -106,7 +104,7 @@ int main(int argc, char**argv)
 
     Sleep(128);
     QueryPerformanceCounter(&liStartTime);
-    crcf = crc64r(0, bfr, SIZE);
+    crcf = crz64ra(0, bfr, SIZE);
     QueryPerformanceCounter(&liStopTime);
     dStartTime = (double)liStartTime.QuadPart;
     dStopTime = (double)liStopTime.QuadPart;

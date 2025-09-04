@@ -29,7 +29,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       Function API:
-;       uint64_t crc64_iso_refl_by16_10(
+;       uint64_t crz64ra(
 ;               uint64_t init_crc, //initial CRC value, 64 bits
 ;               const unsigned char *buf, //buffer pointer to calculate CRC on
 ;               uint64_t len //buffer length in bytes (64-bit data)
@@ -38,7 +38,7 @@
 %include "reg_sizes.asm"
 
 %ifndef FUNCTION_NAME
-%define FUNCTION_NAME crc64_iso_refl_by16_10
+%define FUNCTION_NAME crz64ra
 %endif
 
 %define fetch_dist      1024
@@ -46,8 +46,93 @@
 [bits 64]
 default rel
 
-section .text
+section .data
+align 32
 
+%if 1
+;                                       ;crc64  iso, bits reversed
+rk_1:   dq      0x45000000b0000000      ;2^((64*32)-1) mod P(x)
+rk_2:   dq      0x6b700000f5000000      ;2^((64*33)-1) mod P(x)
+rk01:   dq      0xf500000000000001      ;2^((64* 2)-1) mod P(x)
+rk02:   dq      0x6b70000000000001      ;2^((64* 3)-1) mod P(x)
+rk03:   dq      0xb001000000010000      ;2^((64*16)-1) mod P(x)
+rk04:   dq      0xf501b0000001b000      ;2^((64*17)-1) mod P(x)
+rk05:   dq      0xf500000000000001      ;2^((64* 2)-1) mod P(x)
+rk06:   dq      0x0000000000000000      ;2^((64* 1)-1) mod P(x)
+rk07:   dq      0xb000000000000001      ;floor((2^127)/(P(x))
+rk08:   dq      0xb000000000000000      ;P(x) - 1
+rk09:   dq      0xe014514514501501      ;2^((64*14)-1) mod P(x)
+rk10    dq      0x771db6db6db71c71      ;2^((64*15)-1) mod P(x)
+rk11    dq      0xa101101101110001      ;2^((64*12)-1) mod P(x)
+rk12    dq      0x1ab1ab1ab1aab001      ;2^((64*13)-1) mod P(x)
+rk13    dq      0xf445014445000001      ;2^((64*10)-1) mod P(x)
+rk14    dq      0x6aab71daab700001      ;2^((64*11)-1) mod P(x)
+rk15    dq      0xb100010100000001      ;2^((64* 8)-1) mod P(x)
+rk16    dq      0x01b001b1b0000001      ;2^((64* 9)-1) mod P(x)
+rk17    dq      0xe145150000000001      ;2^((64* 6)-1) mod P(x)
+rk18    dq      0x76db6c7000000001      ;2^((64* 7)-1) mod P(x)
+rk19    dq      0xa011000000000001      ;2^((64* 4)-1) mod P(x)
+rk20    dq      0x1b1ab00000000001      ;2^((64* 5)-1) mod P(x)
+        dq      0xf500000000000001      ;2^((64* 2)-1) mod P(x)
+        dq      0x6b70000000000001      ;2^((64* 3)-1) mod P(x)
+        dq      0x0000000000000000
+        dq      0x0000000000000000
+%else
+;                                       ;crc64 ecma, bits reversed
+rk_1:   dq      0xf31fd9271e228b79      ;2^((64*32)-1) mod P(x)
+rk_2:   dq      0x8260adf2381ad81c      ;2^((64*33)-1) mod P(x)
+rk01:   dq      0xdabe95afc7875f40      ;2^((64* 2)-1) mod P(x)
+rk02:   dq      0xe05dd497ca393ae4      ;2^((64* 3)-1) mod P(x)
+rk03:   dq      0xd7d86b2af73de740      ;2^((64*16)-1) mod P(x)
+rk04:   dq      0x8757d71d4fcc1000      ;2^((64*17)-1) mod P(x)
+rk05:   dq      0xdabe95afc7875f40      ;2^((64* 2)-1) mod P(x)
+rk06:   dq      0x0000000000000000      ;2^((64* 1)-1) mod P(x)
+rk07:   dq      0x9c3e466c172963d5      ;floor((2^127)/(P(x))
+rk08:   dq      0x92d8af2baf0e1e84      ;P(x) - 1
+rk09:   dq      0x947874de595052cb      ;2^((64*14)-1) mod P(x)
+rk10:   dq      0x9e735cb59b4724da      ;2^((64*15)-1) mod P(x)
+rk11:   dq      0xe4ce2cd55fea0037      ;2^((64*12)-1) mod P(x)
+rk12:   dq      0x2fe3fd2920ce82ec      ;2^((64*13)-1) mod P(x)
+rk13:   dq      0x0e31d519421a63a5      ;2^((64*10)-1) mod P(x)
+rk14:   dq      0x2e30203212cac325      ;2^((64*11)-1) mod P(x)
+rk15:   dq      0x081f6054a7842df4      ;2^((64* 8)-1) mod P(x)
+rk16:   dq      0x6ae3efbb9dd441f3      ;2^((64* 9)-1) mod P(x)
+rk17:   dq      0x69a35d91c3730254      ;2^((64* 6)-1) mod P(x)
+rk18:   dq      0xb5ea1af9c013aca4      ;2^((64* 7)-1) mod P(x)
+rk19:   dq      0x3be653a30fe1af51      ;2^((64* 4)-1) mod P(x)
+rk20:   dq      0x60095b008a9efa44      ;2^((64* 5)-1) mod P(x)
+        dq      0xdabe95afc7875f40      ;2^((64* 2)-1) mod P(x)
+        dq      0xe05dd497ca393ae4      ;2^((64* 3)-1) mod P(x)
+        dq      0x0000000000000000
+        dq      0x0000000000000000
+%endif
+
+pshufb_shf_table:
+; use these values for shift constants for the pshufb instruction
+; different alignments result in values as shown:
+;       dq 0x8887868584838281, 0x008f8e8d8c8b8a89 ; shl 15 (16-1) / shr1
+;       dq 0x8988878685848382, 0x01008f8e8d8c8b8a ; shl 14 (16-3) / shr2
+;       dq 0x8a89888786858483, 0x0201008f8e8d8c8b ; shl 13 (16-4) / shr3
+;       dq 0x8b8a898887868584, 0x030201008f8e8d8c ; shl 12 (16-4) / shr4
+;       dq 0x8c8b8a8988878685, 0x04030201008f8e8d ; shl 11 (16-5) / shr5
+;       dq 0x8d8c8b8a89888786, 0x0504030201008f8e ; shl 10 (16-6) / shr6
+;       dq 0x8e8d8c8b8a898887, 0x060504030201008f ; shl 9  (16-7) / shr7
+;       dq 0x8f8e8d8c8b8a8988, 0x0706050403020100 ; shl 8  (16-8) / shr8
+;       dq 0x008f8e8d8c8b8a89, 0x0807060504030201 ; shl 7  (16-9) / shr9
+;       dq 0x01008f8e8d8c8b8a, 0x0908070605040302 ; shl 6  (16-10) / shr10
+;       dq 0x0201008f8e8d8c8b, 0x0a09080706050403 ; shl 5  (16-11) / shr11
+;       dq 0x030201008f8e8d8c, 0x0b0a090807060504 ; shl 4  (16-12) / shr12
+;       dq 0x04030201008f8e8d, 0x0c0b0a0908070605 ; shl 3  (16-13) / shr13
+;       dq 0x0504030201008f8e, 0x0d0c0b0a09080706 ; shl 2  (16-14) / shr14
+;       dq 0x060504030201008f, 0x0e0d0c0b0a090807 ; shl 1  (16-15) / shr15
+dq 0x8786858483828100, 0x8f8e8d8c8b8a8988
+dq 0x0706050403020100, 0x000e0d0c0b0a0908
+
+mask:  dq     0xFFFFFFFFFFFFFFFF, 0x0000000000000000
+mask2: dq     0xFFFFFFFF00000000, 0xFFFFFFFFFFFFFFFF
+mask3: dq     0x8080808080808080, 0x8080808080808080
+
+section .text
 
 %ifidn __OUTPUT_FORMAT__, win64
         %xdefine        arg1 rcx
@@ -411,88 +496,3 @@ _exact_16_left:
 
         jmp     _128_done
 
-section .data
-align 32
-
-%if 1
-;                                       ;crc64  iso, bits reversed
-rk_1:   dq      0x45000000b0000000      ;2^((64*32)-1) mod P(x)
-rk_2:   dq      0x6b700000f5000000      ;2^((64*33)-1) mod P(x)
-rk01:   dq      0xf500000000000001      ;2^((64* 2)-1) mod P(x)
-rk02:   dq      0x6b70000000000001      ;2^((64* 3)-1) mod P(x)
-rk03:   dq      0xb001000000010000      ;2^((64*16)-1) mod P(x)
-rk04:   dq      0xf501b0000001b000      ;2^((64*17)-1) mod P(x)
-rk05:   dq      0xf500000000000001      ;2^((64* 2)-1) mod P(x)
-rk06:   dq      0x0000000000000000      ;2^((64* 1)-1) mod P(x)
-rk07:   dq      0xb000000000000001      ;floor((2^127)/(P(x))
-rk08:   dq      0xb000000000000000      ;P(x) - 1
-rk09:   dq      0xe014514514501501      ;2^((64*14)-1) mod P(x)
-rk10    dq      0x771db6db6db71c71      ;2^((64*15)-1) mod P(x)
-rk11    dq      0xa101101101110001      ;2^((64*12)-1) mod P(x)
-rk12    dq      0x1ab1ab1ab1aab001      ;2^((64*13)-1) mod P(x)
-rk13    dq      0xf445014445000001      ;2^((64*10)-1) mod P(x)
-rk14    dq      0x6aab71daab700001      ;2^((64*11)-1) mod P(x)
-rk15    dq      0xb100010100000001      ;2^((64* 8)-1) mod P(x)
-rk16    dq      0x01b001b1b0000001      ;2^((64* 9)-1) mod P(x)
-rk17    dq      0xe145150000000001      ;2^((64* 6)-1) mod P(x)
-rk18    dq      0x76db6c7000000001      ;2^((64* 7)-1) mod P(x)
-rk19    dq      0xa011000000000001      ;2^((64* 4)-1) mod P(x)
-rk20    dq      0x1b1ab00000000001      ;2^((64* 5)-1) mod P(x)
-        dq      0xf500000000000001      ;2^((64* 2)-1) mod P(x)
-        dq      0x6b70000000000001      ;2^((64* 3)-1) mod P(x)
-        dq      0x0000000000000000
-        dq      0x0000000000000000
-%else
-;                                       ;crc64 ecma, bits reversed
-rk_1:   dq      0xf31fd9271e228b79      ;2^((64*32)-1) mod P(x)
-rk_2:   dq      0x8260adf2381ad81c      ;2^((64*33)-1) mod P(x)
-rk01:   dq      0xdabe95afc7875f40      ;2^((64* 2)-1) mod P(x)
-rk02:   dq      0xe05dd497ca393ae4      ;2^((64* 3)-1) mod P(x)
-rk03:   dq      0xd7d86b2af73de740      ;2^((64*16)-1) mod P(x)
-rk04:   dq      0x8757d71d4fcc1000      ;2^((64*17)-1) mod P(x)
-rk05:   dq      0xdabe95afc7875f40      ;2^((64* 2)-1) mod P(x)
-rk06:   dq      0x0000000000000000      ;2^((64* 1)-1) mod P(x)
-rk07:   dq      0x9c3e466c172963d5      ;floor((2^127)/(P(x))
-rk08:   dq      0x92d8af2baf0e1e84      ;P(x) - 1
-rk09:   dq      0x947874de595052cb      ;2^((64*14)-1) mod P(x)
-rk10:   dq      0x9e735cb59b4724da      ;2^((64*15)-1) mod P(x)
-rk11:   dq      0xe4ce2cd55fea0037      ;2^((64*12)-1) mod P(x)
-rk12:   dq      0x2fe3fd2920ce82ec      ;2^((64*13)-1) mod P(x)
-rk13:   dq      0x0e31d519421a63a5      ;2^((64*10)-1) mod P(x)
-rk14:   dq      0x2e30203212cac325      ;2^((64*11)-1) mod P(x)
-rk15:   dq      0x081f6054a7842df4      ;2^((64* 8)-1) mod P(x)
-rk16:   dq      0x6ae3efbb9dd441f3      ;2^((64* 9)-1) mod P(x)
-rk17:   dq      0x69a35d91c3730254      ;2^((64* 6)-1) mod P(x)
-rk18:   dq      0xb5ea1af9c013aca4      ;2^((64* 7)-1) mod P(x)
-rk19:   dq      0x3be653a30fe1af51      ;2^((64* 4)-1) mod P(x)
-rk20:   dq      0x60095b008a9efa44      ;2^((64* 5)-1) mod P(x)
-        dq      0xdabe95afc7875f40      ;2^((64* 2)-1) mod P(x)
-        dq      0xe05dd497ca393ae4      ;2^((64* 3)-1) mod P(x)
-        dq      0x0000000000000000
-        dq      0x0000000000000000
-%endif
-
-pshufb_shf_table:
-; use these values for shift constants for the pshufb instruction
-; different alignments result in values as shown:
-;       dq 0x8887868584838281, 0x008f8e8d8c8b8a89 ; shl 15 (16-1) / shr1
-;       dq 0x8988878685848382, 0x01008f8e8d8c8b8a ; shl 14 (16-3) / shr2
-;       dq 0x8a89888786858483, 0x0201008f8e8d8c8b ; shl 13 (16-4) / shr3
-;       dq 0x8b8a898887868584, 0x030201008f8e8d8c ; shl 12 (16-4) / shr4
-;       dq 0x8c8b8a8988878685, 0x04030201008f8e8d ; shl 11 (16-5) / shr5
-;       dq 0x8d8c8b8a89888786, 0x0504030201008f8e ; shl 10 (16-6) / shr6
-;       dq 0x8e8d8c8b8a898887, 0x060504030201008f ; shl 9  (16-7) / shr7
-;       dq 0x8f8e8d8c8b8a8988, 0x0706050403020100 ; shl 8  (16-8) / shr8
-;       dq 0x008f8e8d8c8b8a89, 0x0807060504030201 ; shl 7  (16-9) / shr9
-;       dq 0x01008f8e8d8c8b8a, 0x0908070605040302 ; shl 6  (16-10) / shr10
-;       dq 0x0201008f8e8d8c8b, 0x0a09080706050403 ; shl 5  (16-11) / shr11
-;       dq 0x030201008f8e8d8c, 0x0b0a090807060504 ; shl 4  (16-12) / shr12
-;       dq 0x04030201008f8e8d, 0x0c0b0a0908070605 ; shl 3  (16-13) / shr13
-;       dq 0x0504030201008f8e, 0x0d0c0b0a09080706 ; shl 2  (16-14) / shr14
-;       dq 0x060504030201008f, 0x0e0d0c0b0a090807 ; shl 1  (16-15) / shr15
-dq 0x8786858483828100, 0x8f8e8d8c8b8a8988
-dq 0x0706050403020100, 0x000e0d0c0b0a0908
-
-mask:  dq     0xFFFFFFFFFFFFFFFF, 0x0000000000000000
-mask2: dq     0xFFFFFFFF00000000, 0xFFFFFFFFFFFFFFFF
-mask3: dq     0x8080808080808080, 0x8080808080808080
